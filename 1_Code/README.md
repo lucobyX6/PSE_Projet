@@ -1,0 +1,1 @@
+Pour lancer le projet, exécuter avec la commande : source, le fichier SourceMe
