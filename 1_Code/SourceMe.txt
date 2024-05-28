@@ -1,0 +1,14 @@
+#!/bin/bash
+
+echo "- - - Initialisation du projet - - - "
+echo "- - Nettoyage du projet - - "
+
+rm -r Exec
+
+echo "- - Makefile - - "
+
+make
+
+ehco "- - Lancement du projet - -"
+
+./MALS_RIQUIER_VINCENT
