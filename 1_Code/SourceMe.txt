@@ -1,14 +1,32 @@
 #!/bin/bash
 
 echo "- - - Initialisation du projet - - - "
-echo "- - Nettoyage du projet - - "
 
-rm -r Exec
+rm ./SERVEUR/Serveur_start
+rm ./CLIENT/Client_start
 
-echo "- - Makefile - - "
+echo "- - Makefiles - - "
 
+echo "-> Serveur"
+
+cd ./SERVEUR/
 make
 
-ehco "- - Lancement du projet - -"
+echo "-> Client"
 
-./MALS_RIQUIER_VINCENT
+cd ../CLIENT/
+make
+
+echo "- - Nettoyage du projet - - "
+
+cd ../
+
+rm ./CLIENT/client.o
+rm ./CLIENT/jeu_client.o
+
+rm ./SERVEUR/serveur.o
+rm ./SERVEUR/jeu_serveur.o
+
+echo "- - Lancement du serveur - -"
+
+./SERVEUR/Serveur_start

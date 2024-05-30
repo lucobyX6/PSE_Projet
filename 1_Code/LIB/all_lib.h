@@ -1,4 +1,6 @@
 /* - - - Bibliothèques - - - */ 
+#ifndef JEU_SERVEUR 
+#define JEU_SERVEUR
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -19,4 +21,5 @@
 #include <semaphore.h>
 #include <errno.h>
 
-/* - - - HEADER - - -*/
+
+#endif
