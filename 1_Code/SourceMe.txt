@@ -29,4 +29,4 @@ rm ./SERVEUR/jeu_serveur.o
 
 echo "- - Lancement du serveur - -"
 
-./SERVEUR/Serveur_start
+./SERVEUR/Serveur_start 2000
