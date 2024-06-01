@@ -1,0 +1,24 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "C/C++ Runner: Debug Session",
+      "type": "cppdbg",
+      "request": "launch",
+      "args": [],
+      "stopAtEntry": false,
+      "externalConsole": true,
+      "cwd": "c:/1_Travail/3_ISMIN/1A_ISMIN/1_Cours/ISMIN_S6/4_Informatique_1/2_Programmation_systeme/0_Projet/PSE_Projet/1_Code/LIB",
+      "program": "c:/1_Travail/3_ISMIN/1A_ISMIN/1_Cours/ISMIN_S6/4_Informatique_1/2_Programmation_systeme/0_Projet/PSE_Projet/1_Code/LIB/build/Debug/outDebug",
+      "MIMode": "gdb",
+      "miDebuggerPath": "gdb",
+      "setupCommands": [
+        {
+          "description": "Enable pretty-printing for gdb",
+          "text": "-enable-pretty-printing",
+          "ignoreFailures": true
+        }
+      ]
+    }
+  ]
+}

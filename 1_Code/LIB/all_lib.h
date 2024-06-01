@@ -1,7 +1,8 @@
-/* - - - Bibliothèques - - - */ 
 #ifndef JEU_SERVEUR 
 #define JEU_SERVEUR
 
+
+/* - - - Bibliothèques - - - */ 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -20,6 +21,10 @@
 #include <pthread.h>
 #include <semaphore.h>
 #include <errno.h>
+#include <libgen.h>
+#include <stdarg.h>
 
+/* - - - Header - - - */
+#include "utilities.h"
 
 #endif
