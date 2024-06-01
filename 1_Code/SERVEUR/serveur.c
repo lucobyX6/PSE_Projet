@@ -2,90 +2,137 @@
 
 int main(int argc, char* argv[]) 
 {
-  short port;
-  int ecoute, canal, output;
-  struct sockaddr_in adrEcoute, adrClient;
-  unsigned int lgAdrClient;
-  int numWorkerLibre;
-  
-  fdJournal = open("journal.log", O_WRONLY|O_CREAT|O_APPEND, 0644);
-  if (fdJournal == -1)
-    erreur_IO("ouverture journal");
 
-  creerCohorteWorkers();
-
-  if (argc != 2)
-    erreur("utilisation: %s port\n", argv[0]);
-
-  port = (short)atoi(argv[1]);
-
-  printf("%s: création d'une socket\n", CMD);
-  ecoute = socket (AF_INET, SOCK_STREAM, 0);
-  if (ecoute < 0)
-    erreur_IO("socket");
-  
-  adrEcoute.sin_family = AF_INET;
-  adrEcoute.sin_addr.s_addr = INADDR_ANY;
-  adrEcoute.sin_port = htons(port);
-  printf("%s: connection à l'adresse INADDR_ANY sur le port %d\n", CMD, port);
-  output = bind (ecoute,  (struct sockaddr *)&adrEcoute, sizeof(adrEcoute));
-  if (output < 0)
-    erreur_IO("bind");
-  
-  printf("%s: écoute d'une socket\n", CMD);
-  output = listen (ecoute, 5);
-  if (output < 0)
-    erreur_IO("listen");
-  
-  while (1) {
-    printf("%s: acceptation de la connection\n", CMD);
-    canal = accept(ecoute, (struct sockaddr *)&adrClient, &lgAdrClient);
-    if (canal < 0)
-      erreur_IO("accept");
-
-    printf("%s: adr %s, port %hu\n", CMD,
-	      stringIP(ntohl(adrClient.sin_addr.s_addr)), ntohs(adrClient.sin_port));
-
-    while ( (numWorkerLibre = chercherWorkerLibre()) < 0 )
-        usleep(100000);
-
-    dataSpec[numWorkerLibre].canal = canal;
+  // Nombre de joueurs
+  int nb_players;
+  while(nb_players > 4 || nb_players < 2)
+  {
+    printf("Choisissez le nombre de joueurs : ");
+    scanf(" %d", &nb_players);
+    if(nb_players > 4 || nb_players < 2)
+      printf("Le nombre de joueurs doit être contenu entre 2 et 4\n");
   }
 
-  if (close(ecoute) == -1)
-    erreur_IO("fermeture ecoute");
+  char nom_partie[L_MAX];
+  printf("Choisissez le nom de la partie : ");
+  scanf(" %s", &nom_partie);
 
-  if (close(fdJournal) == -1)
-    erreur_IO("fermeture journal");
+  // Ports de communication des clients
+  printf("%s: assignation des ports de communication\n", CMD);
+  for(int i =0; i < nb_players; i++)
+  {
+    printf("Entrez le port %d : ", i);
+    scanf(" %d", &tab_port_players[i]);
+  }
+
+  // Création du worker pour chaque client
+  creerCohorteWorkers(nb_players);
+
+  // Création des sockets de communication
+  printf("%s: création des sockets\n", CMD);
+  for(int i =0; i < nb_players; i++)
+  {
+    tab_ecoute_players[i] = socket(AF_INET, SOCK_STREAM, 0);
+    if (tab_ecoute_players[i] < 0)
+      erreur_IO("socket");
+  }
+
+  // Libére les adresses cibles 
+  int e =1;
+  for(int i =0; i < nb_players; i++)
+  {
+    setsockopt(tab_ecoute_players[i], SOL_SOCKET, SO_REUSEADDR, &e, sizeof(e));
+  }
+
+  // Adresse de communciation
+  for(int i =0; i < nb_players; i++)
+  {
+    adrEcoute[i].sin_family = AF_INET;
+    adrEcoute[i].sin_addr.s_addr = INADDR_ANY;
+    adrEcoute[i].sin_port = htons(tab_port_players[i]);
+    printf("%s: connection à l'adresse INADDR_ANY sur le port %d\n", CMD, tab_port_players[i]);
+    output = bind (tab_ecoute_players[i],  (struct sockaddr *)&adrEcoute[i], sizeof(adrEcoute[i]));
+    if (output < 0)
+      erreur_IO("bind");
+  }
+  
+  // Écoute de plusieurs sockets
+  printf("%s: écoute des sockets\n", CMD);
+  for(int i =0; i < nb_players; i++)
+  {
+    output = listen(tab_ecoute_players[i], 5);
+    if (output < 0)
+      erreur_IO("listen");
+  }
+
+  // Nom des joueurs
+  char nom_J1[L_MAX] = "Pas de joueur";
+  char nom_J2[L_MAX] = "Pas de joueur";
+  char nom_J3[L_MAX] = "Pas de joueur";
+  char nom_J4[L_MAX] = "Pas de joueur";
+
+  // Recherche des joueurs
+  pthread_t idThread_1;
+  pthread_t idThread_2;
+  pthread_t idThread_3;
+  pthread_t idThread_4;
+
+  int a = 0;
+  pthread_create(&idThread_1, NULL, Recherche_joueurs, &a);
+
+  int b = 1;
+  pthread_create(&idThread_2, NULL, Recherche_joueurs, &b);
+
+  if(nb_players > 2)
+  {
+    int c = 2;
+    pthread_create(&idThread_3, NULL, Recherche_joueurs, &c);
+  }
+
+  if(nb_players > 3)
+  {
+    int d = 3;
+    pthread_create(&idThread_4, NULL, Recherche_joueurs, &d);
+  }
+
+  while (1) 
+  {
+    // Salon de jeu
+    printf("< - - -[Salon %s]- - - >\n", nom_partie);
+    printf("Joueur 1 : %s sur le port %d\n", nom_J1, tab_port_players[0]);
+    printf("Joueur 2 : %s sur le port %d\n", nom_J2, tab_port_players[1]);
+
+    if(nb_players > 2)
+      printf("Joueur 3 : %s sur le port %d\n", nom_J3, tab_port_players[2]);
+    if(nb_players > 3)
+      printf("Joueur 4 : %s sur le port %d\n", nom_J4, tab_port_players[3]);
+    printf("\n");
+    usleep(5000000);
+  }
+
+  // Fermeture du serveur
+  for(int i =0; i<nb_players; i++)
+  {
+    if (close(tab_ecoute_players[i]) == -1)
+      erreur_IO("fermeture ecoute");
+  }
 
   return EXIT_SUCCESS;
 }
 
 // Création des N workers et des N threads liés
-void creerCohorteWorkers(void) {
-  int i, ret;
-
-  for (i= 0; i < NB_WORKERS; i++) {
-    dataSpec[i].canal = -1;
-    dataSpec[i].tid = i;
-
-    ret = pthread_create(&dataSpec[i].id, NULL, threadWorker, &dataSpec[i]);
-    if (ret != 0)
-      erreur_IO("creation thread");
-  }
+void creerCohorteWorkers(int nb_p) 
+{
+  int ret;
+  for(int i=0; i<nb_p; i++)
+{
+  dataSpec[i][0].canal = -1;
+  dataSpec[i][0].tid = i;
+  ret = pthread_create(&dataSpec[i][0].id, NULL, threadWorker, &dataSpec[i][0]);
+  if (ret != 0)
+    erreur_IO("creation thread");
 }
 
-// Retourne le numéro du worker libre trouvé ou -1 si aucun worker de libre
-int chercherWorkerLibre(void) {
-  int i = 0;
-
-  while (dataSpec[i].canal != -1 && i < NB_WORKERS)
-    i++;
-
-  if (i < NB_WORKERS)
-    return i;
-  else
-    return -1;
 }
 
 // Création d'un thread pour un worker
@@ -125,10 +172,6 @@ void sessionClient(int canal) {
         printf("%s: fin client\n", CMD);
         fin = 1;
     }
-    else if (strcmp(ligne, "init") == 0) {
-      printf("%s: remise a zero journal\n", CMD);
-      remiseAZeroJournal();
-    }
     else if (ecrireLigne(fdJournal, ligne) != -1) {
         printf("%s: ligne de %d octets ecrite dans journal\n", CMD, lgLue);
     }
@@ -140,12 +183,29 @@ void sessionClient(int canal) {
     erreur_IO("fermeture canal");
 }
 
-// Fermeture et réinitialisation du journal
-void remiseAZeroJournal(void) {
-  if (close(fdJournal) == -1)
-    erreur_IO("raz journal - fermeture");
+// Recherche de joueurs
+void* Recherche_joueurs(void* arg)
+{
+  int end = 0;
+  int* i;
+  i = (int*)arg;
+  while(!end)
+  {
+    // Connection des joueurs
+    canal[*i] = accept(tab_ecoute_players[*i], (struct sockaddr *)&adrClient[*i], &lgAdrClient[*i]);
+    printf("Thread %d: acceptation de la connection\n", *i);
 
-  fdJournal = open("journal.log", O_WRONLY|O_TRUNC|O_APPEND, 0644);
-  if (fdJournal == -1)
-    erreur_IO("raz journal - ouverture");
+    if (canal[*i] < 0)
+      erreur_IO("accept");
+
+    printf("%s: adr %s, port %hu\n", CMD,
+	  stringIP(ntohl(adrClient[*i].sin_addr.s_addr)), ntohs(adrClient[*i].sin_port));
+
+    // Attente d'un worker libre
+    while (workers[*i] == 1)
+        usleep(1);
+
+    dataSpec[*i][0].canal = canal[*i];
+    workers[*i] = 1;
+  }
 }
