@@ -1,1 +1,17 @@
-Pour lancer le projet, exécuter avec la commande : source, le fichier SourceMe
+# Protocole de communication client/serveur PCCS
+
+3 parties : 
+
+- Numéro client : 1,2,3 ...
+
+- type de message : 
+
+c -> Connection
+
+r -> Réponse
+
+g -> Grille
+
+s -> SLAM
+
+- argument : string

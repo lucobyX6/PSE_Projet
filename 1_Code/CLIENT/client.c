@@ -38,9 +38,12 @@ int main(int argc, char* argv[])
     if (output < 0)
         erreur_IO("connect");
 
-    strcpy(prompt,"1_connection");
+    // Connection du client
+    strcpy(prompt,"1_c");
     output = ecrireLigne(sock, prompt);
     if (output == -1) erreur_IO("ecrire ligne");
+
+    // Nom du client
 
     while (!end) {
         printf("ligne> ");
