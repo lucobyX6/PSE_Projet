@@ -29,29 +29,36 @@ typedef struct DataThread_t {
 
 /* - - - Variables globales - - - */
 int fdJournal;
-DataSpec dataSpec[NB_PLAYERS_MAX][NB_WORKERS];
+DataSpec dataSpec;
 
 // Port de connection des joueurs
-short tab_port_players[NB_PLAYERS_MAX];
-int tab_ecoute_players[NB_PLAYERS_MAX];
+int ecoute;
 
 // Communication
-struct sockaddr_in adrEcoute[NB_PLAYERS_MAX];
-struct sockaddr_in adrClient[NB_PLAYERS_MAX];
+struct sockaddr_in adrEcoute;
+struct sockaddr_in adrClient;
 
 // Canaux de communication
-int canal[NB_PLAYERS_MAX];
+int canal;
 
 int output;
-unsigned int lgAdrClient[NB_PLAYERS_MAX];
-int workers[NB_PLAYERS_MAX]; // Si une case est à 0, le worker est libre sinon il est occupé
+unsigned int lgAdrClient;
+
+/* -> Joueurs <- */
+int joueurs_actifs[NB_PLAYERS_MAX]; // Si une case est à 0, le worker est libre sinon il est occupé
+
+// Nom des joueurs
+char default_player[L_MAX] = "Pas de joueur";
+char nom_J[4][L_MAX];
 
 /* - - - Prototypes - - - */
 void creerCohorteWorkers(int nb_p);
 int chercherWorkerLibre(void);
 void *threadWorker(void *arg);
 void sessionClient(int canal);
+
 void* Recherche_joueurs(void* arg);
+void Attentes_joueurs(char* nom_partie, int* nb_players, int* nb_players_actifs);
 
 
 #endif

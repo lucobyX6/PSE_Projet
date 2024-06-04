@@ -2,14 +2,21 @@
 
 int main(int argc, char* argv[]) 
 {
+  short port;
+
+  // Nombre d'argument correct ?
+  if (argc != 2)
+    erreur("Utilisation: %s port machine\n", argv[0]);
 
   // Nombre de joueurs
-  int nb_players;
-  while(nb_players > 4 || nb_players < 2)
+  int nb_players = 0;
+  int nb_players_actifs =0;
+
+  while(nb_players < 2 || nb_players > 4)
   {
     printf("Choisissez le nombre de joueurs : ");
     scanf(" %d", &nb_players);
-    if(nb_players > 4 || nb_players < 2)
+    if(nb_players < 2 || nb_players > 4)
       printf("Le nombre de joueurs doit être contenu entre 2 et 4\n");
   }
 
@@ -19,57 +26,41 @@ int main(int argc, char* argv[])
 
   // Ports de communication des clients
   printf("%s: assignation des ports de communication\n", CMD);
-  for(int i =0; i < nb_players; i++)
-  {
-    printf("Entrez le port %d : ", i);
-    scanf(" %d", &tab_port_players[i]);
-  }
+  port = (short)atoi(argv[1]);
+  printf("Port de communication %d : ", port);
 
-  // Création du worker pour chaque client
-  creerCohorteWorkers(nb_players);
-
-  // Création des sockets de communication
+  // Création de la socket de communication
   printf("%s: création des sockets\n", CMD);
-  for(int i =0; i < nb_players; i++)
-  {
-    tab_ecoute_players[i] = socket(AF_INET, SOCK_STREAM, 0);
-    if (tab_ecoute_players[i] < 0)
-      erreur_IO("socket");
-  }
-
+  ecoute = socket(AF_INET, SOCK_STREAM, 0);
+  if (ecoute < 0)
+    erreur_IO("socket");
+  
   // Libére les adresses cibles 
   int e =1;
-  for(int i =0; i < nb_players; i++)
-  {
-    setsockopt(tab_ecoute_players[i], SOL_SOCKET, SO_REUSEADDR, &e, sizeof(e));
-  }
+  setsockopt(ecoute, SOL_SOCKET, SO_REUSEADDR, &e, sizeof(e));
 
   // Adresse de communciation
-  for(int i =0; i < nb_players; i++)
-  {
-    adrEcoute[i].sin_family = AF_INET;
-    adrEcoute[i].sin_addr.s_addr = INADDR_ANY;
-    adrEcoute[i].sin_port = htons(tab_port_players[i]);
-    printf("%s: connection à l'adresse INADDR_ANY sur le port %d\n", CMD, tab_port_players[i]);
-    output = bind (tab_ecoute_players[i],  (struct sockaddr *)&adrEcoute[i], sizeof(adrEcoute[i]));
-    if (output < 0)
-      erreur_IO("bind");
-  }
+
+  adrEcoute.sin_family = AF_INET;
+  adrEcoute.sin_addr.s_addr = INADDR_ANY;
+  adrEcoute.sin_port = htons(port);
+  
+  printf("%s: connection à l'adresse INADDR_ANY sur le port %d\n", CMD, port);
+  output = bind (ecoute,  (struct sockaddr *)&adrEcoute, sizeof(adrEcoute));
+  if (output < 0)
+    erreur_IO("bind");
   
   // Écoute de plusieurs sockets
-  printf("%s: écoute des sockets\n", CMD);
-  for(int i =0; i < nb_players; i++)
-  {
-    output = listen(tab_ecoute_players[i], 5);
-    if (output < 0)
-      erreur_IO("listen");
-  }
+  printf("%s: écoute de la socket\n", CMD);
+  output = listen(ecoute, 5);
+  if (output < 0)
+    erreur_IO("listen");
 
-  // Nom des joueurs
-  char nom_J1[L_MAX] = "Pas de joueur";
-  char nom_J2[L_MAX] = "Pas de joueur";
-  char nom_J3[L_MAX] = "Pas de joueur";
-  char nom_J4[L_MAX] = "Pas de joueur";
+  // Initialisation des noms des joueurs
+  for(int j=0; j<nb_players ;j++)
+  {
+    strcpy(nom_J[j], default_player);
+  }
 
   // Recherche des joueurs
   pthread_t idThread_1;
@@ -95,27 +86,29 @@ int main(int argc, char* argv[])
     pthread_create(&idThread_4, NULL, Recherche_joueurs, &d);
   }
 
+  // Salon d'attente des joueurs
+  int p = fork();
+  if (p == 0) 
+  {
+    Attentes_joueurs(nom_partie, &nb_players, &nb_players_actifs);
+  }
+  else 
+  {
+    wait(NULL);
+  }
+
+  // Création du worker pour chaque client
+  creerCohorteWorkers(nb_players);
+
+  // Lancement du jeu
   while (1) 
   {
-    // Salon de jeu
-    printf("< - - -[Salon %s]- - - >\n", nom_partie);
-    printf("Joueur 1 : %s sur le port %d\n", nom_J1, tab_port_players[0]);
-    printf("Joueur 2 : %s sur le port %d\n", nom_J2, tab_port_players[1]);
-
-    if(nb_players > 2)
-      printf("Joueur 3 : %s sur le port %d\n", nom_J3, tab_port_players[2]);
-    if(nb_players > 3)
-      printf("Joueur 4 : %s sur le port %d\n", nom_J4, tab_port_players[3]);
-    printf("\n");
-    usleep(5000000);
+    printf("FIN");
   }
 
   // Fermeture du serveur
-  for(int i =0; i<nb_players; i++)
-  {
-    if (close(tab_ecoute_players[i]) == -1)
-      erreur_IO("fermeture ecoute");
-  }
+  if (close(ecoute) == -1)
+    erreur_IO("fermeture ecoute");
 
   return EXIT_SUCCESS;
 }
@@ -126,9 +119,9 @@ void creerCohorteWorkers(int nb_p)
   int ret;
   for(int i=0; i<nb_p; i++)
 {
-  dataSpec[i][0].canal = -1;
-  dataSpec[i][0].tid = i;
-  ret = pthread_create(&dataSpec[i][0].id, NULL, threadWorker, &dataSpec[i][0]);
+  dataSpec.canal = -1;
+  dataSpec.tid = i;
+  ret = pthread_create(&dataSpec.id, NULL, threadWorker, &dataSpec);
   if (ret != 0)
     erreur_IO("creation thread");
 }
@@ -186,26 +179,71 @@ void sessionClient(int canal) {
 // Recherche de joueurs
 void* Recherche_joueurs(void* arg)
 {
+  
   int end = 0;
   int* i;
   i = (int*)arg;
+  
+  // Connection des joueurs
+  canal = accept(ecoute, (struct sockaddr *)&adrClient, &lgAdrClient);
+
+  if (canal < 0)
+    erreur_IO("accept");
+
+  dataSpec.canal = canal;
+
+  end = 0;
+  int lgLue;
+  char ligne[L_MAX];
+  char ligne_connection[L_MAX];
+  sprintf(ligne_connection, "%d_connection", *(i+1));
+
   while(!end)
   {
-    // Connection des joueurs
-    canal[*i] = accept(tab_ecoute_players[*i], (struct sockaddr *)&adrClient[*i], &lgAdrClient[*i]);
-    printf("Thread %d: acceptation de la connection\n", *i);
-
-    if (canal[*i] < 0)
-      erreur_IO("accept");
-
-    printf("%s: adr %s, port %hu\n", CMD,
-	  stringIP(ntohl(adrClient[*i].sin_addr.s_addr)), ntohs(adrClient[*i].sin_port));
-
-    // Attente d'un worker libre
-    while (workers[*i] == 1)
-        usleep(1);
-
-    dataSpec[*i][0].canal = canal[*i];
-    workers[*i] = 1;
+    lgLue = lireLigne(canal, ligne);
+    if (lgLue < 0)
+      erreur_IO("lireLigne");
+  
+    if(strcmp(ligne, ligne_connection))  
+    {
+      pthread_exit(NULL);
+    }
   }
+}
+
+void Attentes_joueurs(char* nom_partie, int* nb_players, int* nb_players_actifs)
+{
+  
+  FILE *fp = fopen("./SERVEUR/salle_attente.txt", "w");
+
+  char *args[] = {"watch", "-n", "5", "cat", "./SERVEUR/salle_attente.txt", NULL};
+  int p = fork();
+  if(p ==0)
+    execvp("watch", args);
+  else
+  {
+
+    int end = 0;
+
+    while(!end)
+    {
+      fprintf(fp, "< - - -[Salon %s]- - - >\n", nom_partie);
+      for(int i =0; i < *nb_players; i++)
+      { 
+        fprintf(fp, "Joueur %d : %s avec le file descriptor %d\n", i+1, nom_J[i], ecoute);
+      }
+
+      fflush(fp);
+
+      if(*nb_players_actifs == *nb_players)
+      {
+        end = 1;
+      }
+      fseek(fp, 0, SEEK_SET);
+    }
+  
+  }
+
+  fclose(fp);
+  pthread_exit(NULL);
 }

@@ -27,6 +27,5 @@ rm ./CLIENT/jeu_client.o
 rm ./SERVEUR/serveur.o
 rm ./SERVEUR/jeu_serveur.o
 
-echo "- - Lancement du serveur - -"
-
-./SERVEUR/Serveur_start
+rm ./SERVEUR/utilities.o
+rm ./CLIENT/utilities.o
