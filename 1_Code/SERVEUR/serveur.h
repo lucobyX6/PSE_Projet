@@ -9,7 +9,6 @@
 
 /* - - - Define - - - */
 #define   CMD         "serveur"
-#define   NB_WORKERS  1
 #define   NB_PLAYERS_MAX  4
 
 /* - - - Structures - - - */
@@ -27,29 +26,31 @@ typedef struct DataThread_t {
                                  sinon NULL */
 } DataThread;
 
+typedef struct _Joueurs
+{
+  int canal;
+  char nom[L_MAX];
+  int num_joueur;
+}Joueurs;
+
 /* - - - Variables globales - - - */
 int fdJournal;
-DataSpec dataSpec;
 
-// Port de connection des joueurs
-int ecoute;
+/* - - Joueurs - - */
+int joueurs_actifs[NB_PLAYERS_MAX]; // Si une case est à 0, le worker est libre sinon il est occupé
 
 // Communication
 struct sockaddr_in adrEcoute;
 struct sockaddr_in adrClient;
+unsigned int lgAdrClient; 
+DataSpec dataSpec;
 
-// Canaux de communication
-int canal;
+// Port de communication
+short port;
+int ecoute;
 
-int output;
-unsigned int lgAdrClient;
-
-/* -> Joueurs <- */
-int joueurs_actifs[NB_PLAYERS_MAX]; // Si une case est à 0, le worker est libre sinon il est occupé
-
-// Nom des joueurs
-char default_player[L_MAX] = "Pas de joueur";
-char nom_J[4][L_MAX];
+// Fichier de sauvegarde
+FILE * info_joueurs;
 
 /* - - - Prototypes - - - */
 void creerCohorteWorkers(int nb_p);
@@ -57,8 +58,10 @@ int chercherWorkerLibre(void);
 void *threadWorker(void *arg);
 void sessionClient(int canal);
 
-void* Recherche_joueurs(void* arg);
-void Attentes_joueurs(char* nom_partie, int* nb_players, int* nb_players_actifs);
+void Attentes_joueurs(char* nom_partie, int nb_joueurs, char* default_joueur);
+
+int identification_message(char* message, int* numero);
+void decoupe_message(char* output, char* message);
 
 
 #endif

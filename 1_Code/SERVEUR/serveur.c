@@ -2,25 +2,39 @@
 
 int main(int argc, char* argv[]) 
 {
-  short port;
+  /* - - - Variables - - - */
+  
+  // Sortie d'erreur
+  int output;
+
+  // Nom par défauts des joueurs
+  char default_joueur[L_MAX] = "Pas de joueur";
+
+  // Nombre de joueurs
+  int nb_joueurs = 0;
+
+  // Nom de la partie
+  char nom_partie[L_MAX];
 
   // Nombre d'argument correct ?
   if (argc != 2)
     erreur("Utilisation: %s port machine\n", argv[0]);
 
-  // Nombre de joueurs
-  int nb_players = 0;
-  int nb_players_actifs =0;
-
-  while(nb_players < 2 || nb_players > 4)
+  // Choix du nombre de joueurs 
+  while(nb_joueurs < 2 || nb_joueurs > 4)
   {
     printf("Choisissez le nombre de joueurs : ");
-    scanf(" %d", &nb_players);
-    if(nb_players < 2 || nb_players > 4)
+    scanf(" %d", &nb_joueurs);
+    if(nb_joueurs < 2 || nb_joueurs > 4)
       printf("Le nombre de joueurs doit être contenu entre 2 et 4\n");
   }
 
-  char nom_partie[L_MAX];
+  // Fichier de stockage des informations joueurs
+  info_joueurs = fopen("info_joueurs","w+");
+
+  fwrite(&nb_joueurs, sizeof(int), 1, info_joueurs);
+
+  // Choix du nom de la partie
   printf("Choisissez le nom de la partie : ");
   scanf(" %s", &nom_partie);
 
@@ -35,12 +49,12 @@ int main(int argc, char* argv[])
   if (ecoute < 0)
     erreur_IO("socket");
   
-  // Libére les adresses cibles 
+  // Libére l'adresse cible
+  printf("%s: Libération de l'adresse cible\n", CMD);
   int e =1;
   setsockopt(ecoute, SOL_SOCKET, SO_REUSEADDR, &e, sizeof(e));
 
   // Adresse de communciation
-
   adrEcoute.sin_family = AF_INET;
   adrEcoute.sin_addr.s_addr = INADDR_ANY;
   adrEcoute.sin_port = htons(port);
@@ -54,57 +68,16 @@ int main(int argc, char* argv[])
   printf("%s: écoute de la socket\n", CMD);
   output = listen(ecoute, 5);
   if (output < 0)
-    erreur_IO("listen");
+    erreur_IO("listen");;
 
-  // Initialisation des noms des joueurs
-  for(int j=0; j<nb_players ;j++)
-  {
-    strcpy(nom_J[j], default_player);
-  }
-
-  // Recherche des joueurs
-  pthread_t idThread_1;
-  pthread_t idThread_2;
-  pthread_t idThread_3;
-  pthread_t idThread_4;
-
-  int a = 0;
-  pthread_create(&idThread_1, NULL, Recherche_joueurs, &a);
-
-  int b = 1;
-  pthread_create(&idThread_2, NULL, Recherche_joueurs, &b);
-
-  if(nb_players > 2)
-  {
-    int c = 2;
-    pthread_create(&idThread_3, NULL, Recherche_joueurs, &c);
-  }
-
-  if(nb_players > 3)
-  {
-    int d = 3;
-    pthread_create(&idThread_4, NULL, Recherche_joueurs, &d);
-  }
-
-  // Salon d'attente des joueurs
-  int p = fork();
-  if (p == 0) 
-  {
-    Attentes_joueurs(nom_partie, &nb_players, &nb_players_actifs);
-  }
-  else 
-  {
-    wait(NULL);
-  }
+  // Salon d'attente des joueurs & de recherches
+  printf("%s: salle d'attente \n", CMD);
+  Attentes_joueurs(nom_partie,nb_joueurs,default_joueur);
 
   // Création du worker pour chaque client
-  creerCohorteWorkers(nb_players);
+  //creerCohorteWorkers(nb_joueurs);
 
-  // Lancement du jeu
-  while (1) 
-  {
-    printf("FIN");
-  }
+  while(1)usleep(1);
 
   // Fermeture du serveur
   if (close(ecoute) == -1)
@@ -176,74 +149,134 @@ void sessionClient(int canal) {
     erreur_IO("fermeture canal");
 }
 
-// Recherche de joueurs
-void* Recherche_joueurs(void* arg)
+
+void Attentes_joueurs(char* nom_partie, int nb_joueurs, char* default_joueur)
 {
   
-  int end = 0;
-  int* i;
-  i = (int*)arg;
-  
-  // Connection des joueurs
-  canal = accept(ecoute, (struct sockaddr *)&adrClient, &lgAdrClient);
-
-  if (canal < 0)
-    erreur_IO("accept");
-
-  dataSpec.canal = canal;
-
-  end = 0;
-  int lgLue;
-  char ligne[L_MAX];
-  char ligne_connection[L_MAX];
-  sprintf(ligne_connection, "%d_connection", *(i+1));
-
-  while(!end)
-  {
-    lgLue = lireLigne(canal, ligne);
-    if (lgLue < 0)
-      erreur_IO("lireLigne");
-  
-    if(strcmp(ligne, ligne_connection))  
-    {
-      pthread_exit(NULL);
-    }
-  }
-}
-
-void Attentes_joueurs(char* nom_partie, int* nb_players, int* nb_players_actifs)
-{
-  
+  // Fichier qui contient la salle d'attente des joueurs
   FILE *fp = fopen("./SERVEUR/salle_attente.txt", "w");
 
   char *args[] = {"watch", "-n", "5", "cat", "./SERVEUR/salle_attente.txt", NULL};
+  
+  // Initialisation des noms des joueurs
+  printf("%s: initialisation des noms des joueurs\n", CMD);
+  char nom_J[4][L_MAX];
+  int canal_J[4];
+  for(int i =0; i < nb_joueurs; i++)
+  {
+    strcpy(nom_J[i], default_joueur);
+  }
+  for(int i =0; i < nb_joueurs; i++)
+  {
+    canal_J[i] = -1;
+  }
+  
+  
+  int nb_joueurs_actifs =0;
+  int pid=0;
+  // Lecture
+  int lgLue;
+  char ligne[L_MAX];
+  char ligne_old[L_MAX];
+  int canal_temp =0;
+
+  printf("%s: fork\n", CMD);
   int p = fork();
   if(p ==0)
+  {
+    // Affichage des joueurs
     execvp("watch", args);
+    exit(0);
+  }
   else
   {
-
     int end = 0;
-
     while(!end)
     {
+      strcpy(ligne_old, ligne);
+      
+      fp=freopen(NULL,"w",fp);
+      // Mise à jour du salon
       fprintf(fp, "< - - -[Salon %s]- - - >\n", nom_partie);
-      for(int i =0; i < *nb_players; i++)
+      for(int i =0; i < nb_joueurs; i++)
       { 
-        fprintf(fp, "Joueur %d : %s avec le file descriptor %d\n", i+1, nom_J[i], ecoute);
+        fprintf(fp, "Joueur %d : %s avec sur le canal %d\n", i+1, nom_J[i], canal_J[i]);
       }
-
       fflush(fp);
-
-      if(*nb_players_actifs == *nb_players)
-      {
-        end = 1;
-      }
       fseek(fp, 0, SEEK_SET);
+
+      // Recherche des joueurs
+      canal_temp = accept(ecoute, (struct sockaddr *)&adrClient, &lgAdrClient);
+      if (canal_temp < 0)
+        erreur_IO("accept");
+      
+      Joueurs* Nouveau_joueurs = (Joueurs*)malloc(sizeof(Joueurs));
+      Nouveau_joueurs->canal = canal_temp;
+      // Lire une ligne de la socket
+      lgLue = lireLigne(Nouveau_joueurs->canal, ligne);
+      if (lgLue < 0)
+      erreur_IO("lireLigne");
+
+  
+      int output = identification_message(ligne, &Nouveau_joueurs->num_joueur);
+
+      // On retire les parties fonctionnelles du message pour ne garder que le pseudonyme
+      decoupe_message(Nouveau_joueurs->nom,ligne);
+
+      // Sauvegarde des informations
+      fwrite(Nouveau_joueurs, sizeof(Nouveau_joueurs), 1, info_joueurs);
+
+      // Pour l'affichage local
+      strcpy(nom_J[Nouveau_joueurs->num_joueur-1], Nouveau_joueurs->nom);
+      canal_J[Nouveau_joueurs->num_joueur-1] = Nouveau_joueurs->canal;
+
+      nb_joueurs_actifs++;
+
+      if(nb_joueurs_actifs == nb_joueurs)
+        end =1;
     }
   
   }
-
+  // FIN
+  kill(p, SIGTERM);
   fclose(fp);
+  printf("%s: Début de la partie dans 3\n", CMD);
+  usleep(1000000);
+  printf("%s: Début de la partie dans 2\n", CMD);
+  usleep(1000000);
+  printf("%s: Début de la partie dans 1\n", CMD);
+  usleep(1000000);
+  printf("%s: Début de la partie\n", CMD);
   pthread_exit(NULL);
+
+}
+
+int identification_message(char* message, int* numero)
+{
+  *numero = message[0] - '0';
+  switch(message[2]) {
+        case Connection:
+            return 0;
+            break;
+        case Reponse:
+            return 1;
+            break;
+        case Grille:
+            return 2;
+            break;
+        case Slam:
+            return 3;
+            break;
+        default:
+            return -1;
+    }
+  
+}
+
+void decoupe_message(char* output, char* message)
+{
+  for(int i=4; i<strlen(message); i++)
+  {
+    output[i-4] = message[i];
+  }
 }

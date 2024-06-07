@@ -19,6 +19,14 @@ int ecrireLigne(int fd, char *buffer);
 /* - - - Define - - - */
 #define L_MAX 200
 
+#define Connection 'C'
+
+#define Reponse 'R'
+
+#define Grille 'G'
+
+#define Slam 'S'
+
 /* - - - Structures - - - */
 static struct addrinfo *static_infos = NULL;
 

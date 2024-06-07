@@ -10,9 +10,10 @@ int main(int argc, char* argv[])
     int end =0;
 
     char prompt[L_MAX];
+    char Nom[L_MAX-4];
 
     // Nombre d'argument correct ?
-    if (argc != 3)
+    if (argc != 4)
         erreur("Utilisation: %s port machine\n", argv[0]);
 
     // Création de la socket
@@ -38,14 +39,17 @@ int main(int argc, char* argv[])
     if (output < 0)
         erreur_IO("connect");
 
-    // Connection du client
-    strcpy(prompt,"1_c");
+    // Connection au serveur avec pseudonyme
+    printf("Quel est votre nom ?\n");
+    printf("Nom : ");
+    scanf(" %s", Nom);
+
+    sprintf(prompt, "%d_C_%s", atoi(argv[3]), Nom);
+
     output = ecrireLigne(sock, prompt);
     if (output == -1) erreur_IO("ecrire ligne");
-
-    // Nom du client
-
-    while (!end) {
+    
+    /*while (!end) {
         printf("ligne> ");
         if (fgets(prompt, L_MAX, stdin) == NULL) erreur("saisie fin de fichier\n");
         strcpy(prompt,"test");
@@ -57,7 +61,7 @@ int main(int argc, char* argv[])
         printf("%s: %d octets envoyés\n", CMD, output);
 
         if (strcmp(prompt, "end\n") == 0) end = 1;
-    }
+    }*/
 
     if (close(sock) == -1)
         erreur_IO("close socket");
