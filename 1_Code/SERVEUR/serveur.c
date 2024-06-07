@@ -156,7 +156,7 @@ void Attentes_joueurs(char* nom_partie, int nb_joueurs, char* default_joueur)
   // Fichier qui contient la salle d'attente des joueurs
   FILE *fp = fopen("./SERVEUR/salle_attente.txt", "w");
 
-  char *args[] = {"watch", "-n", "5", "cat", "./SERVEUR/salle_attente.txt", NULL};
+  char *args[] = {"watch", "-n", "1", "cat", "./SERVEUR/salle_attente.txt", NULL};
   
   // Initialisation des noms des joueurs
   printf("%s: initialisation des noms des joueurs\n", CMD);
