@@ -49,9 +49,6 @@ DataSpec dataSpec;
 short port;
 int ecoute;
 
-// Fichier de sauvegarde
-FILE * info_joueurs;
-
 /* - - - Prototypes - - - */
 void creerCohorteWorkers(int nb_p);
 int chercherWorkerLibre(void);
@@ -60,8 +57,10 @@ void sessionClient(int canal);
 
 void Attentes_joueurs(char* nom_partie, int nb_joueurs, char* default_joueur);
 
-int identification_message(char* message, int* numero);
+int identification_message(char* message);
 void decoupe_message(char* output, char* message);
+
+void recup_data_fichier(int numero, int* nb_joueurs, Joueurs* J_struct);
 
 
 #endif

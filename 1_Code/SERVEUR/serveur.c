@@ -29,11 +29,6 @@ int main(int argc, char* argv[])
       printf("Le nombre de joueurs doit être contenu entre 2 et 4\n");
   }
 
-  // Fichier de stockage des informations joueurs
-  info_joueurs = fopen("info_joueurs","w+");
-
-  fwrite(&nb_joueurs, sizeof(int), 1, info_joueurs);
-
   // Choix du nom de la partie
   printf("Choisissez le nom de la partie : ");
   scanf(" %s", &nom_partie);
@@ -153,6 +148,12 @@ void sessionClient(int canal) {
 void Attentes_joueurs(char* nom_partie, int nb_joueurs, char* default_joueur)
 {
   
+  // Fichier de stockage des informations joueurs
+  FILE * info_joueurs;
+  info_joueurs = fopen("info_joueurs","w+");
+
+  fwrite(&nb_joueurs, sizeof(int), 1, info_joueurs);
+  
   // Fichier qui contient la salle d'attente des joueurs
   FILE *fp = fopen("./SERVEUR/salle_attente.txt", "w");
 
@@ -173,6 +174,7 @@ void Attentes_joueurs(char* nom_partie, int nb_joueurs, char* default_joueur)
   
   
   int nb_joueurs_actifs =0;
+  int end =0;
   int pid=0;
   // Lecture
   int lgLue;
@@ -190,7 +192,6 @@ void Attentes_joueurs(char* nom_partie, int nb_joueurs, char* default_joueur)
   }
   else
   {
-    int end = 0;
     while(!end)
     {
       strcpy(ligne_old, ligne);
@@ -200,7 +201,7 @@ void Attentes_joueurs(char* nom_partie, int nb_joueurs, char* default_joueur)
       fprintf(fp, "< - - -[Salon %s]- - - >\n", nom_partie);
       for(int i =0; i < nb_joueurs; i++)
       { 
-        fprintf(fp, "Joueur %d : %s avec sur le canal %d\n", i+1, nom_J[i], canal_J[i]);
+        fprintf(fp, "Joueur %d : %s sur le canal %d\n", i+1, nom_J[i], canal_J[i]);
       }
       fflush(fp);
       fseek(fp, 0, SEEK_SET);
@@ -212,13 +213,13 @@ void Attentes_joueurs(char* nom_partie, int nb_joueurs, char* default_joueur)
       
       Joueurs* Nouveau_joueurs = (Joueurs*)malloc(sizeof(Joueurs));
       Nouveau_joueurs->canal = canal_temp;
+
       // Lire une ligne de la socket
       lgLue = lireLigne(Nouveau_joueurs->canal, ligne);
       if (lgLue < 0)
       erreur_IO("lireLigne");
 
-  
-      int output = identification_message(ligne, &Nouveau_joueurs->num_joueur);
+      Nouveau_joueurs->num_joueur = nb_joueurs_actifs+1;
 
       // On retire les parties fonctionnelles du message pour ne garder que le pseudonyme
       decoupe_message(Nouveau_joueurs->nom,ligne);
@@ -232,14 +233,18 @@ void Attentes_joueurs(char* nom_partie, int nb_joueurs, char* default_joueur)
 
       nb_joueurs_actifs++;
 
-      if(nb_joueurs_actifs == nb_joueurs)
+      if(nb_joueurs_actifs >= nb_joueurs)
+      {
         end =1;
+      }
+
     }
   
   }
   // FIN
   kill(p, SIGTERM);
   fclose(fp);
+  fclose(info_joueurs);
   printf("%s: Début de la partie dans 3\n", CMD);
   usleep(1000000);
   printf("%s: Début de la partie dans 2\n", CMD);
@@ -251,9 +256,8 @@ void Attentes_joueurs(char* nom_partie, int nb_joueurs, char* default_joueur)
 
 }
 
-int identification_message(char* message, int* numero)
+int identification_message(char* message)
 {
-  *numero = message[0] - '0';
   switch(message[2]) {
         case Connection:
             return 0;
@@ -275,8 +279,22 @@ int identification_message(char* message, int* numero)
 
 void decoupe_message(char* output, char* message)
 {
-  for(int i=4; i<strlen(message); i++)
+  for(int i=2; i<strlen(message); i++)
   {
-    output[i-4] = message[i];
+    output[i-2] = message[i];
   }
+}
+
+void recup_data_fichier(int numero, int* nb_joueurs, Joueurs* J_struct)
+{
+  FILE * info_joueurs;
+  info_joueurs = fopen("info_joueurs","r");
+
+  fread(nb_joueurs, sizeof(int), 1, info_joueurs);
+  for(int i=0; i<numero-1; i++)  
+  {
+    fread(J_struct, sizeof(Joueurs), 1, info_joueurs);
+  }
+
+  fclose(info_joueurs);
 }

@@ -13,7 +13,7 @@ int main(int argc, char* argv[])
     char Nom[L_MAX-4];
 
     // Nombre d'argument correct ?
-    if (argc != 4)
+    if (argc != 3)
         erreur("Utilisation: %s port machine\n", argv[0]);
 
     // Création de la socket
@@ -44,7 +44,7 @@ int main(int argc, char* argv[])
     printf("Nom : ");
     scanf(" %s", Nom);
 
-    sprintf(prompt, "%d_C_%s", atoi(argv[3]), Nom);
+    sprintf(prompt, "C_%s", Nom);
 
     output = ecrireLigne(sock, prompt);
     if (output == -1) erreur_IO("ecrire ligne");
