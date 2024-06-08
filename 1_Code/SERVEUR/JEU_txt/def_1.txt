@@ -1,0 +1,11 @@
+10
+0:Apporter des preuves
+1:Feu de fête
+2:Merci plastron
+3:C'est gracieux
+4:Charger la mule
+5:Dire pareil mais autrement
+6:Qui sait se faire aimer
+7:Sujet à prendre avec des pincettes
+8:Échange d'éléments percutant
+9:C'est du chiqué

@@ -49,6 +49,12 @@ DataSpec dataSpec;
 short port;
 int ecoute;
 
+// Threads & FIFO
+int a = 1;
+int b = 2;
+int c = 3;
+int d = 4;
+
 /* - - - Prototypes - - - */
 void creerCohorteWorkers(int nb_p);
 int chercherWorkerLibre(void);
@@ -56,6 +62,7 @@ void *threadWorker(void *arg);
 void sessionClient(int canal);
 
 void Attentes_joueurs(char* nom_partie, int nb_joueurs, char* default_joueur);
+void* session_joueurs(void* arg);
 
 int identification_message(char* message);
 void decoupe_message(char* output, char* message);

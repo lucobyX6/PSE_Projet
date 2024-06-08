@@ -29,6 +29,9 @@ int main(int argc, char* argv[])
       printf("Le nombre de joueurs doit être contenu entre 2 et 4\n");
   }
 
+  // Id des threads joueurs
+  pthread_t* idThreads = (pthread_t*)malloc(nb_joueurs*sizeof(pthread_t));
+
   // Choix du nom de la partie
   printf("Choisissez le nom de la partie : ");
   scanf(" %s", &nom_partie);
@@ -69,8 +72,16 @@ int main(int argc, char* argv[])
   printf("%s: salle d'attente \n", CMD);
   Attentes_joueurs(nom_partie,nb_joueurs,default_joueur);
 
-  // Création du worker pour chaque client
-  //creerCohorteWorkers(nb_joueurs);
+  // Création de la cohorte de session_joueurs
+  pthread_create(&idThreads[a], NULL, session_joueurs, NULL);
+
+  pthread_create(&idThreads[b], NULL, session_joueurs, NULL);
+
+  if(nb_joueurs > 2)
+    pthread_create(&idThreads[c], NULL, session_joueurs, NULL);
+  
+  if(nb_joueurs > 3)
+    pthread_create(&idThreads[d], NULL, session_joueurs, NULL);
 
   while(1)usleep(1);
 
@@ -80,70 +91,6 @@ int main(int argc, char* argv[])
 
   return EXIT_SUCCESS;
 }
-
-// Création des N workers et des N threads liés
-void creerCohorteWorkers(int nb_p) 
-{
-  int ret;
-  for(int i=0; i<nb_p; i++)
-{
-  dataSpec.canal = -1;
-  dataSpec.tid = i;
-  ret = pthread_create(&dataSpec.id, NULL, threadWorker, &dataSpec);
-  if (ret != 0)
-    erreur_IO("creation thread");
-}
-
-}
-
-// Création d'un thread pour un worker
-void *threadWorker(void *arg) {
-  DataSpec *dataTh = (DataSpec *)arg;
-
-  while (1) {
-    while (dataTh->canal < 0)
-      usleep(100000);
-    printf("%s: worker %d reveil\n", CMD, dataTh->tid);
-
-    sessionClient(dataTh->canal);
-
-    dataTh->canal = -1;
-    printf("%s: worker %d sommeil\n", CMD, dataTh->tid);
-  }
-
-  pthread_exit(NULL);
-}
-
-// Session d'un client, utilise un worker 
-void sessionClient(int canal) {
-  int fin = 0;
-  char ligne[L_MAX];
-  int lgLue;
-
-  while (!fin) {
-    lgLue = lireLigne(canal, ligne);
-    if (lgLue < 0)
-      erreur_IO("lireLigne");
-    else if (lgLue == 0)
-      erreur("interruption client\n");
-
-    printf("%s: reception %d octets : \"%s\"\n", CMD, lgLue, ligne);
-
-    if (strcmp(ligne, "fin") == 0) {
-        printf("%s: fin client\n", CMD);
-        fin = 1;
-    }
-    else if (ecrireLigne(fdJournal, ligne) != -1) {
-        printf("%s: ligne de %d octets ecrite dans journal\n", CMD, lgLue);
-    }
-    else
-      erreur_IO("ecriture journal");
-  } // fin while
-
-  if (close(canal) == -1)
-    erreur_IO("fermeture canal");
-}
-
 
 void Attentes_joueurs(char* nom_partie, int nb_joueurs, char* default_joueur)
 {
@@ -235,6 +182,16 @@ void Attentes_joueurs(char* nom_partie, int nb_joueurs, char* default_joueur)
 
       if(nb_joueurs_actifs >= nb_joueurs)
       {
+        fp=freopen(NULL,"w",fp);
+        // Mise à jour du salon
+        fprintf(fp, "< - - -[Salon %s]- - - >\n", nom_partie);
+        for(int i =0; i < nb_joueurs; i++)
+        { 
+          fprintf(fp, "Joueur %d : %s sur le canal %d\n", i+1, nom_J[i], canal_J[i]);
+        }
+        fflush(fp);
+        fseek(fp, 0, SEEK_SET);
+        
         end =1;
       }
 
@@ -251,7 +208,7 @@ void Attentes_joueurs(char* nom_partie, int nb_joueurs, char* default_joueur)
   usleep(1000000);
   printf("%s: Début de la partie dans 1\n", CMD);
   usleep(1000000);
-  printf("%s: Début de la partie\n", CMD);
+  printf("%s: --> Début de la partie\n", CMD);
   pthread_exit(NULL);
 
 }
@@ -297,4 +254,28 @@ void recup_data_fichier(int numero, int* nb_joueurs, Joueurs* J_struct)
   }
 
   fclose(info_joueurs);
+}
+
+void* session_joueurs(void* arg)
+{
+  // Numéro du joueur traité par le thread
+  int* i = (int*)arg;
+
+  // Nombre de joueurs total
+  int* nb_joueurs;
+
+  // Informations du joueurs
+  Joueurs* J_info;
+  
+  // FIFO en écriture
+  char FIFO_ecriture[L_MAX];
+  sprintf(FIFO_ecriture, "FIFO_W_%d", *i);
+  int output = open(FIFO_ecriture, O_CREAT|O_WRONLY|O_TRUNC, 0644);
+
+  // FIFO en lecture
+  char FIFO_lecture[L_MAX];
+  sprintf(FIFO_lecture, "FIFO_R_%d", *i);
+  output = open(FIFO_lecture, O_RDONLY);
+
+  recup_data_fichier(*i, nb_joueurs, J_info);
 }

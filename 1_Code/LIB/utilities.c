@@ -119,3 +119,15 @@ int ecrireLigne(int fd, char *buffer)
   }
   return nbecr;
 }
+
+int randint(int max)
+{
+  srand(time(NULL));
+  int r_value;
+
+  if(max >= 1)  
+    r_value = rand()%max;
+  else
+    r_value = -1;
+  return r_value;
+}

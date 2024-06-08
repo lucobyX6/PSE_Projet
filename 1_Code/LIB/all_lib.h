@@ -1,5 +1,5 @@
-#ifndef JEU_SERVEUR 
-#define JEU_SERVEUR
+#ifndef ALL_LIB 
+#define ALL_LIB
 
 
 /* - - - Bibliothèques - - - */ 
@@ -23,6 +23,7 @@
 #include <errno.h>
 #include <libgen.h>
 #include <stdarg.h>
+#include <time.h>
 
 /* - - - Header - - - */
 #include "utilities.h"

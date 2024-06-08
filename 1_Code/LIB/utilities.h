@@ -1,6 +1,6 @@
 /* - - - IFNDEF - - - */ 
-#ifndef JEU_CLIENT 
-#define JEU_CLIENT
+#ifndef UTILITIES 
+#define UTILITIES
 
 
 /* - - - HEADER - - -*/
@@ -15,6 +15,8 @@ void freeResolv (void);
 
 int lireLigne(int fd, char *buffer);
 int ecrireLigne(int fd, char *buffer);
+
+int randint(int max);
 
 /* - - - Define - - - */
 #define L_MAX 200
