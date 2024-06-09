@@ -99,3 +99,22 @@ void choix_devinettes(char* question ,char* solution, char* q_interdites)
 
 
 }
+
+char* nom_gagnant(int numero_joueur, Joueurs* J1, Joueurs* J2, Joueurs* J3, Joueurs* J4)
+{
+    switch(numero_joueur)
+    {
+        case 0:
+            return J1->nom;
+            break;
+        case 1:
+            return J2->nom;
+            break;
+        case 2:
+            return J3->nom;
+            break;
+        case 3:
+            return J4->nom;
+            break;
+    }
+}

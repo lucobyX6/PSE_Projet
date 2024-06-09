@@ -34,4 +34,11 @@ int randint(int max);
 /* - - - Structures - - - */
 static struct addrinfo *static_infos = NULL;
 
+typedef struct _Joueurs
+{
+  int canal;
+  char nom[L_MAX];
+  int num_joueur;
+}Joueurs;
+
 #endif

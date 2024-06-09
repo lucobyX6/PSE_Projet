@@ -57,8 +57,8 @@ int main(int argc, char* argv[])
     printf("╚══════╝╚══════╝╚═╝  ╚═╝╚═╝     ╚═╝    ╚═╝  ╚═╝╚══════╝╚══════╝ ╚═════╝ ╚═╝  ╚═╝╚═════╝ ╚══════╝╚═════╝\n");
     printf("-------------------------------------------------------------------------------------------------------\n");
 
-    printf("Voici les rêgles du jeu : ");
-    printf("BLABLA");
+    printf("Voici les rêgles du jeu : \n");
+    printf("BLABLA\n");
     
 
     char phase[L_MAX];
@@ -66,6 +66,7 @@ int main(int argc, char* argv[])
         
         output = lireLigne(sock, phase);
         if (output == -1) erreur_IO("lire ligne");
+        printf("%s", phase);
 
         if(strcmp(phase, "1"))
         {
@@ -78,7 +79,7 @@ int main(int argc, char* argv[])
                 /* - - Réponse - -*/
                 
                 // Acquisition de la réponse
-                printf("Réponse : ");
+                printf("Réponse : \n");
                 scanf("%s", prompt);
 
                 // Envoi de la réponse

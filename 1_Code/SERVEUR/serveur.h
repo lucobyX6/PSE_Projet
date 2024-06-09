@@ -26,13 +26,6 @@ typedef struct DataThread_t {
                                  sinon NULL */
 } DataThread;
 
-typedef struct _Joueurs
-{
-  int canal;
-  char nom[L_MAX];
-  int num_joueur;
-}Joueurs;
-
 /* - - - Variables globales - - - */
 int fdJournal;
 
@@ -50,10 +43,10 @@ short port;
 int ecoute;
 
 // Threads & FIFO
-int a = 1;
-int b = 2;
-int c = 3;
-int d = 4;
+int a = 0;
+int b = 1;
+int c = 2;
+int d = 3;
 
 pthread_mutex_t restricted_access = PTHREAD_MUTEX_INITIALIZER;
 
