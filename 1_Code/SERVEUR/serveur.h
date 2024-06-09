@@ -55,6 +55,8 @@ int b = 2;
 int c = 3;
 int d = 4;
 
+pthread_mutex_t restricted_access = PTHREAD_MUTEX_INITIALIZER;
+
 /* - - - Prototypes - - - */
 void creerCohorteWorkers(int nb_p);
 int chercherWorkerLibre(void);
@@ -64,7 +66,6 @@ void sessionClient(int canal);
 void Attentes_joueurs(char* nom_partie, int nb_joueurs, char* default_joueur);
 void* session_joueurs(void* arg);
 
-int identification_message(char* message);
 void decoupe_message(char* output, char* message);
 
 void recup_data_fichier(int numero, int* nb_joueurs, Joueurs* J_struct);

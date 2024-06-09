@@ -213,27 +213,6 @@ void Attentes_joueurs(char* nom_partie, int nb_joueurs, char* default_joueur)
 
 }
 
-int identification_message(char* message)
-{
-  switch(message[2]) {
-        case Connection:
-            return 0;
-            break;
-        case Reponse:
-            return 1;
-            break;
-        case Grille:
-            return 2;
-            break;
-        case Slam:
-            return 3;
-            break;
-        default:
-            return -1;
-    }
-  
-}
-
 void decoupe_message(char* output, char* message)
 {
   for(int i=2; i<strlen(message); i++)
@@ -268,14 +247,73 @@ void* session_joueurs(void* arg)
   Joueurs* J_info;
   
   // FIFO en écriture
-  char FIFO_ecriture[L_MAX];
-  sprintf(FIFO_ecriture, "FIFO_W_%d", *i);
-  int output = open(FIFO_ecriture, O_CREAT|O_WRONLY|O_TRUNC, 0644);
+  int fd_w = open("FIFO_W", O_CREAT|O_WRONLY|O_TRUNC, 0644);
 
   // FIFO en lecture
   char FIFO_lecture[L_MAX];
   sprintf(FIFO_lecture, "FIFO_R_%d", *i);
-  output = open(FIFO_lecture, O_RDONLY);
+  int fd_r = open(FIFO_lecture, O_RDONLY);
 
   recup_data_fichier(*i, nb_joueurs, J_info);
+
+  // Lecture des informations joueurs
+  char ligne[L_MAX];
+  int lgLue;
+
+  // Lecture des directives serveurs
+  char ligne__R_serveur[L_MAX];
+
+  // Envoi des informations vers serveurs 
+  char ligne_W_serveur[L_MAX];
+
+  // Phase de jeu donné par le serveur
+  int phase;
+
+  int end =0;
+  int end_reponse =0;
+  int output;
+  // Attente des instructions 
+  while(!end)
+  {
+    read(fd_r,&phase,sizeof(int));
+    
+    switch (phase)
+    {
+      case 1:
+        /* - - - Instruction 1 serveur - - -*/
+        read(fd_r,ligne__R_serveur,L_MAX*sizeof(char));
+        output = ecrireLigne(J_info->canal, ligne__R_serveur);
+        if (output == -1) erreur_IO("ecrire ligne");
+
+        /* - - Réponse du client - - */
+        lgLue = lireLigne(J_info->canal, ligne);
+        if (lgLue == -1) erreur_IO("lire ligne");
+
+        pthread_mutex_lock(&restricted_access);
+        write(fd_w,ligne_W_serveur,L_MAX*sizeof(char));
+        pthread_mutex_unlock(&restricted_access);
+
+        /* - - - Instruction 2 serveur - - - */
+        read(fd_r,ligne__R_serveur,L_MAX*sizeof(char));
+        output = ecrireLigne(J_info->canal, ligne__R_serveur);
+        if (output == -1) erreur_IO("ecrire ligne");
+
+        break;
+
+      case 2:
+        /* - - - Apparition de la grille - - - */
+
+        /* - - - Choix du numéro - - - */
+
+        /* - - - Définition - - -*/
+
+        break;
+      case 3:
+        /* - - - SLAM ? - - - */
+
+        /* - - - Si oui - - - */
+        break;
+    }
+  }
+
 }

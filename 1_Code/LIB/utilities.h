@@ -29,6 +29,8 @@ int randint(int max);
 
 #define Slam 'S'
 
+#define Information 'I'
+
 /* - - - Structures - - - */
 static struct addrinfo *static_infos = NULL;
 

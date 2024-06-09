@@ -17,24 +17,22 @@ int main(int argc, char* argv[])
         erreur("Utilisation: %s port machine\n", argv[0]);
 
     // Création de la socket
-    printf("%s: création d'une socket\n", CMD);
+    //printf("%s: création d'une socket\n", CMD);
     sock = socket(AF_INET, SOCK_STREAM, 0);
     if (sock < 0)
         erreur_IO("socket");
 
     // Résolution des conflits
-    printf("%s: resolution DNS pour %s, port %s\n", CMD, argv[1], argv[2]);
+    //printf("%s: resolution DNS pour %s, port %s\n", CMD, argv[1], argv[2]);
     adrServ = resolv(argv[1], argv[2]);
     if (adrServ == NULL)
         erreur("adresse %s port %s inconnus\n", argv[1], argv[2]);
 
     // Connection sur le port serveur
-    printf("%s: adr %s, port %hu\n", CMD,
-                stringIP(ntohl(adrServ->sin_addr.s_addr)),
-                ntohs(adrServ->sin_port))   ;
+    //printf("%s: adr %s, port %hu\n", CMD,stringIP(ntohl(adrServ->sin_addr.s_addr)),ntohs(adrServ->sin_port));
 
     // Connection à la socket
-    printf("%s: connection à la socket\n", CMD);
+    //printf("%s: connection à la socket\n", CMD);
     output = connect(sock, (struct sockaddr *)adrServ, sizeof(struct sockaddr_in));
     if (output < 0)
         erreur_IO("connect");
@@ -48,20 +46,61 @@ int main(int argc, char* argv[])
 
     output = ecrireLigne(sock, prompt);
     if (output == -1) erreur_IO("ecrire ligne");
+
+
+    printf("-------------------------------------------------------------------------------------------------------\n");
+    printf("███████╗██╗      █████╗ ███╗   ███╗    ██████╗ ███████╗██╗      ██████╗  █████╗ ██████╗ ███████╗██████╗\n");
+    printf("██╔════╝██║     ██╔══██╗████╗ ████║    ██╔══██╗██╔════╝██║     ██╔═══██╗██╔══██╗██╔══██╗██╔════╝██╔══██╗\n");
+    printf("███████╗██║     ███████║██╔████╔██║    ██████╔╝█████╗  ██║     ██║   ██║███████║██║  ██║█████╗  ██║  ██║\n");
+    printf("╚════██║██║     ██╔══██║██║╚██╔╝██║    ██╔══██╗██╔══╝  ██║     ██║   ██║██╔══██║██║  ██║██╔══╝  ██║  ██║\n");
+    printf("███████║███████╗██║  ██║██║ ╚═╝ ██║    ██║  ██║███████╗███████╗╚██████╔╝██║  ██║██████╔╝███████╗██████╔╝\n");
+    printf("╚══════╝╚══════╝╚═╝  ╚═╝╚═╝     ╚═╝    ╚═╝  ╚═╝╚══════╝╚══════╝ ╚═════╝ ╚═╝  ╚═╝╚═════╝ ╚══════╝╚═════╝\n");
+    printf("-------------------------------------------------------------------------------------------------------\n");
+
+    printf("Voici les rêgles du jeu : ");
+    printf("BLABLA");
     
-    /*while (!end) {
-        printf("ligne> ");
-        if (fgets(prompt, L_MAX, stdin) == NULL) erreur("saisie fin de fichier\n");
-        strcpy(prompt,"test");
 
-        // Envoi du message
-        output = ecrireLigne(sock, prompt);
-        if (output == -1) erreur_IO("ecrire ligne");
+    char phase[L_MAX];
+    while (!end) {
+        
+        output = lireLigne(sock, phase);
+        if (output == -1) erreur_IO("lire ligne");
 
-        printf("%s: %d octets envoyés\n", CMD, output);
+        if(strcmp(phase, "1"))
+        {
+                /* - - Réception 1 - - */
+                output = lireLigne(sock, prompt);
+                if (output == -1) erreur_IO("lire ligne");
 
-        if (strcmp(prompt, "end\n") == 0) end = 1;
-    }*/
+                printf("%s", prompt);
+                
+                /* - - Réponse - -*/
+                
+                // Acquisition de la réponse
+                printf("Réponse : ");
+                scanf("%s", prompt);
+
+                // Envoi de la réponse
+                output = ecrireLigne(sock, prompt);
+                if (output == -1) erreur_IO("ecrire ligne");
+
+                /* - - Réception 2 - - */
+                output = lireLigne(sock, prompt);
+                if (output == -1) erreur_IO("lire ligne");
+
+                printf("%s", prompt);
+        }
+        if(strcmp(phase, "2"))
+        {
+
+        }
+        if(strcmp(phase, "3"))
+        {
+
+        }
+
+    }
 
     if (close(sock) == -1)
         erreur_IO("close socket");

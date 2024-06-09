@@ -12,8 +12,9 @@
 
 
 /* - - - PROTOTYPES - - - */
-void choix_grille(int* taille_grille, int ** grille, int* taille_def, char** def);
-void choix_devinettes(char* question ,char* solution, int* q_interdites);
+void choix_grille();
+int char_here(char C, char* Str);
+void choix_devinettes(char* question ,char* solution, char* q_interdites);
 
 
 #endif
