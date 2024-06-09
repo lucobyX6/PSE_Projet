@@ -79,19 +79,23 @@ int main(int argc, char* argv[])
   int* fd_W_Threads = (int*)malloc(nb_joueurs*sizeof(int));
   for(int i; i<nb_joueurs; i++)
   {
-    sprintf(F_name, "FIFO_W_%d", i);
-    fd_W_Threads[i] = open(F_name, O_CREAT|O_WRONLY|O_TRUNC);
+    sprintf(F_name, "FIFO_R_%d", i);
+    fd_W_Threads[i] = open(F_name, O_CREAT|O_WRONLY|O_TRUNC, 0644);
+    if(output < 0)
+    {
+      erreur_IO("write");
+    }
   }
 
-  pthread_create(&idThreads[a], NULL, session_joueurs, NULL);
+  pthread_create(&idThreads[a], NULL, session_joueurs, &a);
 
-  pthread_create(&idThreads[b], NULL, session_joueurs, NULL);
+  pthread_create(&idThreads[b], NULL, session_joueurs, &b);
 
   if(nb_joueurs > 2)
-    pthread_create(&idThreads[c], NULL, session_joueurs, NULL);
+    pthread_create(&idThreads[c], NULL, session_joueurs, &c);
   
   if(nb_joueurs > 3)
-    pthread_create(&idThreads[d], NULL, session_joueurs, NULL);
+    pthread_create(&idThreads[d], NULL, session_joueurs, &d);
 
   /* - - - FIFO de communication avec les threads - - - */
 
@@ -161,7 +165,11 @@ int main(int argc, char* argv[])
     sprintf(texte, "Le gagnant est le joueur %s", nom_gagnant(gagnant, J1_info, J2_info, J3_info, J4_info));
     for(int i=0; i < nb_joueurs; i++)
     {
-      write(fd_W_Threads[i],texte,L_MAX*sizeof(char));
+      output = write(fd_W_Threads[i],texte,L_MAX*sizeof(char));
+      if(output < 0)
+      {
+        erreur_IO("write");
+      }
     }
 
 
@@ -322,10 +330,10 @@ void* session_joueurs(void* arg)
   int* i = (int*)arg;
 
   // Nombre de joueurs total
-  int* nb_joueurs;
+  int* nb_joueurs = (int*)malloc(sizeof(int));
 
   // Informations du joueurs
-  Joueurs* J_info;
+  Joueurs* J_info = (Joueurs*)malloc(sizeof(Joueurs));
   recup_data_fichier(*i, nb_joueurs, J_info);
   
   // FIFO en écriture
@@ -333,6 +341,7 @@ void* session_joueurs(void* arg)
 
   // FIFO en lecture
   char FIFO_lecture[L_MAX];
+  printf("%s", FIFO_lecture);
   sprintf(FIFO_lecture, "FIFO_R_%d", *i);
   int fd_r = open(FIFO_lecture, O_RDONLY);
 
@@ -347,7 +356,7 @@ void* session_joueurs(void* arg)
   char ligne_W_serveur[L_MAX];
 
   // Phase de jeu donné par le serveur
-  int phase;
+  int phase =2;
 
   int end =0;
   int end_reponse =0;
@@ -358,6 +367,7 @@ void* session_joueurs(void* arg)
     
     printf("%s : Phase reçue", "Thread");
     read(fd_r,&phase,sizeof(int));
+    printf("Phase : %d\n", phase);
     sprintf(ligne, "%d", phase);
     output = ecrireLigne(J_info->canal, ligne);
     if (output == -1) erreur_IO("ecrire ligne");
