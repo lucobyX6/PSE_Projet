@@ -59,6 +59,13 @@ int main(int argc, char* argv[])
 
     printf("Voici les rêgles du jeu : \n");
     printf("BLABLA\n");
+
+
+    printf("- - - En construction - - - ");
+    if (close(sock) == -1)
+        erreur_IO("close socket");
+
+    return EXIT_SUCCESS;
     
 
     char phase[L_MAX];
@@ -66,7 +73,6 @@ int main(int argc, char* argv[])
         
         output = lireLigne(sock, phase);
         if (output == -1) erreur_IO("lire ligne");
-        printf("%s", phase);
 
         if(strcmp(phase, "1"))
         {
@@ -102,9 +108,4 @@ int main(int argc, char* argv[])
         }
 
     }
-
-    if (close(sock) == -1)
-        erreur_IO("close socket");
-
-  return EXIT_SUCCESS;
 }

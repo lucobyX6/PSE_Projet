@@ -17,8 +17,8 @@ int main(int argc, char* argv[])
   char nom_partie[L_MAX];
 
   // Nombre d'argument correct ?
-  /*if (argc != 2)
-    erreur("Utilisation: %s port machine\n", argv[0]);*/
+  if (argc != 2)
+    erreur("Utilisation: %s port machine\n", argv[0]);
 
   // Choix du nombre de joueurs 
   while(nb_joueurs < 2 || nb_joueurs > 4)
@@ -38,8 +38,7 @@ int main(int argc, char* argv[])
 
   // Ports de communication des clients
   printf("%s: assignation des ports de communication\n", CMD);
-  //port = (short)atoi(argv[1]);
-  port = 2500;
+  port = (short)atoi(argv[1]);
   printf("Port de communication %d : ", port);
 
   // Création de la socket de communication
@@ -77,14 +76,18 @@ int main(int argc, char* argv[])
   // Création de la cohorte de session_joueurs
   char F_name[L_MAX];
   int* fd_W_Threads = (int*)malloc(nb_joueurs*sizeof(int));
-  for(int i; i<nb_joueurs; i++)
+
+  fd_W_Threads[0] = open("FIFO_R_0", O_CREAT|O_WRONLY|O_TRUNC, 0644);
+  fd_W_Threads[1] = open("FIFO_R_1", O_CREAT|O_WRONLY|O_TRUNC, 0644);
+
+  if(nb_joueurs > 2)
   {
-    sprintf(F_name, "FIFO_R_%d", i);
-    fd_W_Threads[i] = open(F_name, O_CREAT|O_WRONLY|O_TRUNC, 0644);
-    if(output < 0)
-    {
-      erreur_IO("write");
-    }
+    fd_W_Threads[2] = open("FIFO_R_2", O_CREAT|O_WRONLY|O_TRUNC, 0644);
+  }
+
+  if(nb_joueurs > 3)
+  {
+    fd_W_Threads[3] = open("FIFO_R_3", O_CREAT|O_WRONLY|O_TRUNC, 0644);
   }
 
   pthread_create(&idThreads[a], NULL, session_joueurs, &a);
@@ -107,7 +110,7 @@ int main(int argc, char* argv[])
   Joueurs* J3_info;
   Joueurs* J4_info;
 
-  printf("%s : Récupération des informations joueurs", CMD);
+  printf("%s : Récupération des informations joueurs\n", CMD);
   recup_data_fichier(1, &nb_joueurs, J1_info);
   recup_data_fichier(2, &nb_joueurs, J2_info);
 
@@ -130,18 +133,27 @@ int main(int argc, char* argv[])
   char q_interdit[L_MAX];
   int gagnant =0;
 
+  /* - - - FIN PROGRAMME FONCTIONNEL - - - */
+  printf("- - - En construction - - - ");
+
+  // Fermeture du serveur
+  if (close(ecoute) == -1)
+    erreur_IO("fermeture ecoute");
+
+  return EXIT_SUCCESS;
+
   while(1)
   {
     
     /* - - - Phase 1 - Devinette - - - */
-    printf("%s : Phase 1 - Devinette", CMD);
+    printf("%s : Phase 1 - Devinette\n", CMD);
     // Phase 1
     for(int i=0; i < nb_joueurs; i++)
     {
       write(fd_W_Threads[i],&phase,sizeof(int));
     }
 
-    printf("%s : Envoide la devinette", CMD);
+    printf("%s : Envoi de la devinette\n", CMD);
     // Envoi devinette
     choix_devinettes(texte, &solution, q_interdit);
     for(int i=0; i < nb_joueurs; i++)
@@ -149,7 +161,7 @@ int main(int argc, char* argv[])
       write(fd_W_Threads[i],texte,L_MAX*sizeof(char));
     }
 
-    printf("%s : Réponse de la devinette", CMD);
+    printf("%s : Réponse de la devinette\n", CMD);
     // Réponse des devinettes
     for(int i=0; i < nb_joueurs; i++)
     {
@@ -160,7 +172,7 @@ int main(int argc, char* argv[])
       }
     }
 
-    printf("%s : Réponse du serveur", CMD);
+    printf("%s : Réponse du serveur\n", CMD);
     // Réponse serveur
     sprintf(texte, "Le gagnant est le joueur %s", nom_gagnant(gagnant, J1_info, J2_info, J3_info, J4_info));
     for(int i=0; i < nb_joueurs; i++)
@@ -174,12 +186,6 @@ int main(int argc, char* argv[])
 
 
   };
-
-  // Fermeture du serveur
-  if (close(ecoute) == -1)
-    erreur_IO("fermeture ecoute");
-
-  return EXIT_SUCCESS;
 }
 
 void Attentes_joueurs(char* nom_partie, int nb_joueurs, char* default_joueur)
@@ -187,7 +193,7 @@ void Attentes_joueurs(char* nom_partie, int nb_joueurs, char* default_joueur)
   
   // Fichier de stockage des informations joueurs
   FILE * info_joueurs;
-  info_joueurs = fopen("info_joueurs","w+");
+  info_joueurs = fopen("info_joueurs.bin","w+");
 
   fwrite(&nb_joueurs, sizeof(int), 1, info_joueurs);
   
@@ -240,7 +246,6 @@ void Attentes_joueurs(char* nom_partie, int nb_joueurs, char* default_joueur)
       { 
         fprintf(fp, "Joueur %d : %s sur le canal %d\n", i+1, nom_J[i], canal_J[i]);
       }
-      fflush(fp);
       fseek(fp, 0, SEEK_SET);
 
       // Recherche des joueurs
@@ -262,7 +267,7 @@ void Attentes_joueurs(char* nom_partie, int nb_joueurs, char* default_joueur)
       decoupe_message(Nouveau_joueurs->nom,ligne);
 
       // Sauvegarde des informations
-      fwrite(Nouveau_joueurs, sizeof(Nouveau_joueurs), 1, info_joueurs);
+      fwrite(Nouveau_joueurs, sizeof(Joueurs), 1, info_joueurs);
 
       // Pour l'affichage local
       strcpy(nom_J[Nouveau_joueurs->num_joueur-1], Nouveau_joueurs->nom);
@@ -279,7 +284,6 @@ void Attentes_joueurs(char* nom_partie, int nb_joueurs, char* default_joueur)
         { 
           fprintf(fp, "Joueur %d : %s sur le canal %d\n", i+1, nom_J[i], canal_J[i]);
         }
-        fflush(fp);
         fseek(fp, 0, SEEK_SET);
         
         end =1;
@@ -313,14 +317,17 @@ void decoupe_message(char* output, char* message)
 void recup_data_fichier(int numero, int* nb_joueurs, Joueurs* J_struct)
 {
   FILE * info_joueurs;
-  info_joueurs = fopen("info_joueurs","r");
+  info_joueurs = fopen("info_joueurs.bin","r");
+  Joueurs* J_temp = (Joueurs*)malloc(sizeof(Joueurs));
+  int* nb_temp = (int*)malloc(sizeof(int));
 
-  fread(nb_joueurs, sizeof(int), 1, info_joueurs);
-  for(int i=0; i<numero-1; i++)  
-  {
-    fread(J_struct, sizeof(Joueurs), 1, info_joueurs);
-  }
+  fread(nb_temp, sizeof(int), 1, info_joueurs);
+  nb_joueurs = nb_temp;
+  
+  fseek(info_joueurs, (numero-1)*sizeof(Joueurs), SEEK_CUR);
+  fread(J_temp, sizeof(Joueurs), 1, info_joueurs);
 
+  J_struct = J_temp;
   fclose(info_joueurs);
 }
 
@@ -341,7 +348,6 @@ void* session_joueurs(void* arg)
 
   // FIFO en lecture
   char FIFO_lecture[L_MAX];
-  printf("%s", FIFO_lecture);
   sprintf(FIFO_lecture, "FIFO_R_%d", *i);
   int fd_r = open(FIFO_lecture, O_RDONLY);
 
@@ -356,7 +362,7 @@ void* session_joueurs(void* arg)
   char ligne_W_serveur[L_MAX];
 
   // Phase de jeu donné par le serveur
-  int phase =2;
+  int phase =0;
 
   int end =0;
   int end_reponse =0;
@@ -364,10 +370,7 @@ void* session_joueurs(void* arg)
   // Attente des instructions 
   while(!end)
   {
-    
-    printf("%s : Phase reçue", "Thread");
     read(fd_r,&phase,sizeof(int));
-    printf("Phase : %d\n", phase);
     sprintf(ligne, "%d", phase);
     output = ecrireLigne(J_info->canal, ligne);
     if (output == -1) erreur_IO("ecrire ligne");
