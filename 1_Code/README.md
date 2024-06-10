@@ -1,8 +1,6 @@
-# Protocole de communication client/serveur PCCS
+# Protocole de communication client/serveur
 
-3 parties : 
-
-- Numéro client : 1,2,3 ...
+Tous les messages envoyés entre le serveur et les clients sont composés de la façon suivante : 
 
 - type de message : 
 
@@ -15,3 +13,9 @@ g -> Grille
 s -> SLAM
 
 - argument : string
+
+Exemple : 
+
+Pour la connection avec le nom de l'utilisateur, on utilise la ligne suivante : 
+
+C_Basile

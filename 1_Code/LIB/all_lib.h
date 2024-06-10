@@ -23,7 +23,6 @@
 #include <errno.h>
 #include <libgen.h>
 #include <stdarg.h>
-#include <time.h>
 
 /* - - - Header - - - */
 #include "utilities.h"

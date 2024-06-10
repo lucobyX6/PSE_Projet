@@ -51,16 +51,17 @@ int d = 3;
 pthread_mutex_t restricted_access = PTHREAD_MUTEX_INITIALIZER;
 
 /* - - - Prototypes - - - */
-void creerCohorteWorkers(int nb_p);
-int chercherWorkerLibre(void);
-void *threadWorker(void *arg);
-void sessionClient(int canal);
 
+//Fonction de gestion de la salle d'attente (configuration, attente des joueurs, ajout des nouveaux joueurs, etc...)
 void Attentes_joueurs(char* nom_partie, int nb_joueurs, char* default_joueur);
+
+//Fonction pour gérer les échnager serveur/client dans les différentes phases du jeu.
 void* session_joueurs(void* arg);
 
+//Fonction pour découper la partie texte dans le protocole de communication
 void decoupe_message(char* output, char* message);
 
+//Fonction pour récupérer les données stockées dans info_joueurs.bin
 void recup_data_fichier(int numero, int* nb_joueurs, Joueurs* J_struct);
 
 

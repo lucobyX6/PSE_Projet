@@ -20,6 +20,9 @@ int main(int argc, char* argv[])
   if (argc != 2)
     erreur("Utilisation: %s port machine\n", argv[0]);
 
+  // Acceuil 
+  printf(" - - - SLAM Reloaded - - - \n");
+
   // Choix du nombre de joueurs 
   while(nb_joueurs < 2 || nb_joueurs > 4)
   {
@@ -134,7 +137,7 @@ int main(int argc, char* argv[])
   int gagnant =0;
 
   /* - - - FIN PROGRAMME FONCTIONNEL - - - */
-  printf("- - - En construction - - - ");
+  printf("- - - En construction - - - \n");
 
   // Fermeture du serveur
   if (close(ecoute) == -1)
@@ -285,7 +288,7 @@ void Attentes_joueurs(char* nom_partie, int nb_joueurs, char* default_joueur)
           fprintf(fp, "Joueur %d : %s sur le canal %d\n", i+1, nom_J[i], canal_J[i]);
         }
         fseek(fp, 0, SEEK_SET);
-        
+        usleep(5000000);
         end =1;
       }
 
@@ -362,7 +365,7 @@ void* session_joueurs(void* arg)
   char ligne_W_serveur[L_MAX];
 
   // Phase de jeu donné par le serveur
-  int phase =0;
+  int phase;
 
   int end =0;
   int end_reponse =0;
