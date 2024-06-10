@@ -21,7 +21,7 @@ int randint(int max);
 /* - - - Define - - - */
 #define L_MAX 200
 
-#define Connection 'C'
+#define Connexion 'C'
 
 #define Reponse 'R'
 

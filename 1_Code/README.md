@@ -4,13 +4,15 @@ Tous les messages envoyés entre le serveur et les clients sont composés de la 
 
 - type de message : 
 
-c -> Connection
+C -> Connexion
 
-r -> Réponse
+R -> Réponse
 
-g -> Grille
+G -> Grille
 
-s -> SLAM
+S -> SLAM
+
+I -> Information
 
 - argument : string
 
